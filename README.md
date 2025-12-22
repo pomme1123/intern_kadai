@@ -63,3 +63,18 @@ Dockerの基本的な概念については、以下のリンクを参考にし�
 - **ユーザー名**: `root`
 - **パスワード**: `root`
 - **データベース名**: 各自設定した名前
+
+
+自分用メモ
+sqlに入るよう
+docker exec -it docker-db-1 bash
+mysql -u root -p
+USE book_report_db;
+
+rootに入るよう
+docker-compose exec app bash
+cd /var/www/html/my_fuel_project
+
+php oil server -h=0.0.0.0 -p=8080
+
+
