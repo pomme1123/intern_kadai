@@ -1,7 +1,7 @@
 <h2>本の情報を編集</h2>
 
 <?php echo Form::open(['action' => 'book/edit/'.$book->id, 'method' => 'post']); ?>
-
+<?php echo Form::csrf(); ?>
 <p>
     <?php echo Form::label('タイトル', 'title'); ?><br>
     <?php echo Form::input('title', Input::post('title', $book->title), ['class' => 'form-control']); ?>

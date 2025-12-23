@@ -28,12 +28,4 @@ class Model_Book extends Model
 
     protected static $_table_name = 'books';
 
-    public static function validate($factory)
-    {
-        $val = Validation::forge($factory);
-        $val->add_field('title', 'タイトル', 'required|max_length[255]');
-        $val->add_field('impression', '感想', 'required');
-        $val->add_field('finished_at', '読了日', 'required');
-        return $val;
-    }
 }

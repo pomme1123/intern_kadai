@@ -4,30 +4,28 @@ use Fuel\Core\Response;
 use Fuel\Core\Input;
 use Fuel\Core\Session;
 use Fuel\Core\View;
+use Fuel\Core\Validation;
+use Fuel\Core\DB;
 use Auth\Auth;
 
 class Controller_Book extends Controller_Template
 {
-
     public function before()
     {
         parent::before();
 
-        if(!Auth::check()){
+        if (!Auth::check()) {
             Response::redirect('users/login');
         }
     }
+
+    // -------------------------------
+    // 本の一覧
+    // -------------------------------
     public function action_index()
     {
-        if (!Auth::check())
-        {
-            Response::redirect('users/login');
-        }
-
-        // ✅ ログイン中のユーザーIDを取得
         $user_id = Auth::get_user_id()[1];
 
-        // ✅ そのユーザーが登録した本だけを取得
         $data['books'] = Model_Book::query()
             ->where('user_id', $user_id)
             ->order_by('finished_at', 'desc')
@@ -36,154 +34,158 @@ class Controller_Book extends Controller_Template
         $this->template->title = "読んだ本の一覧";
         $this->template->content = View::forge('book/index', $data);
     }
-    
 
-    /**
-     * 詳細ページ
-     */
+    // -------------------------------
+    // 本の詳細
+    // -------------------------------
     public function action_view($id = null)
     {
-        if (is_null($id) || !$data['book'] = Model_Book::find($id))
-        {
+        $book = Model_Book::find($id);
+
+        if (!$book) {
             Session::set_flash('error', '指定された本が見つかりません。');
-            Response::redirect('book');
+            return Response::redirect('book');
+        }
+
+        if ($book->user_id != Auth::get_user_id()[1]) {
+            Session::set_flash('error', 'この本を見る権限がありません。');
+            return Response::redirect('book');
         }
 
         $this->template->title = "本の詳細";
-        $this->template->content = View::forge('book/view', $data);
+        $this->template->content = View::forge('book/view', ['book' => $book]);
     }
 
-    /**
-     * 新しい本を登録
-     */
+    // -------------------------------
+    // 本の登録
+    // -------------------------------
     public function action_create()
     {
-        if (!Auth::check())
-        {
-            Response::redirect('users/login');
-        }
+        // POST のときだけ保存処理
+        if (Input::post()) {
 
-        if (Input::method() == 'POST')
-        {
-            $val = Model_Book::validate('create');
+            // Validation（コントローラ側に移動）
+            $val = Validation::forge();
+            $val->add('title')->add_rule('required');
+            $val->add('impression')->add_rule('required');
 
-            if ($val->run())
-            {
-                $book = Model_Book::forge([
-                    'user_id'    => Auth::get_user_id()[1],
-                    'title'      => Input::post('title'),
-                    'impression' => Input::post('impression'),
-                    'finished_at'=> Input::post('finished_at'),
-                    'created_at' => time(),
-                ]);
-
-                if ($book and $book->save())
-                {
-                    // 成功したら登録完了ページへ
-                    Session::set_flash('success', '本を登録しました！');
-                    $this->template->title = "登録完了";
-                    $this->template->content = View::forge('book/created');
-                    return;
-                }
-                else
-                {
-                    Session::set_flash('error', '本の登録に失敗しました。');
-                }
-            }
-            else
-            {
+            if (!$val->run()) {
                 Session::set_flash('error', $val->error());
+                return Response::redirect('book/create');
             }
+
+            // 保存処理
+            $book = Model_Book::forge([
+                'user_id'     => Auth::get_user_id()[1],
+                'title'       => Input::post('title'),
+                'impression'  => Input::post('impression'),
+                'finished_at' => Input::post('finished_at'),
+                'created_at'  => time(),
+            ]);
+
+            if ($book->save()) {
+                Session::set_flash('success', '本を登録しました！');
+                $this->template->title = "登録完了";
+                $this->template->content = View::forge('book/created');
+                return;
+            }
+
+            Session::set_flash('error', '本の登録に失敗しました。');
         }
 
+        // GET のとき → フォーム表示
         $this->template->title = "新しい本の登録";
         $this->template->content = View::forge('book/create');
     }
 
-    /**
-     * 編集
-     */
+    // -------------------------------
+    // 本の編集
+    // -------------------------------
     public function action_edit($id = null)
     {
-        if (!Auth::check())
-        {
-            Response::redirect('users/login');
-        }
+        $book = Model_Book::find($id);
 
-        if (is_null($id) || !$book = Model_Book::find($id))
-        {
+        if (!$book) {
             Session::set_flash('error', '指定された本が見つかりません。');
-            Response::redirect('book');
+            return Response::redirect('book');
         }
 
-        $val = Model_Book::validate('edit');
+        if ($book->user_id != Auth::get_user_id()[1]) {
+            Session::set_flash('error', 'この本を編集する権限がありません。');
+            return Response::redirect('book');
+        }
 
-        if ($val->run())
-        {
-            $book->title = Input::post('title');
-            $book->impression = Input::post('impression');
+        // POST のときだけ更新処理
+        if (Input::post()) {
+
+            // Validation
+            $val = Validation::forge();
+            $val->add('title')->add_rule('required');
+            $val->add('impression')->add_rule('required');
+
+            if (!$val->run()) {
+                Session::set_flash('error', $val->error());
+                return Response::redirect('book/edit/'.$id);
+            }
+
+            // 更新処理
+            $book->title       = Input::post('title');
+            $book->impression  = Input::post('impression');
             $book->finished_at = Input::post('finished_at');
 
-            if ($book->save())
-            {
+            if ($book->save()) {
                 Session::set_flash('success', '本の情報を更新しました。');
-                Response::redirect('book');
-            }
-            else
-            {
-                Session::set_flash('error', '本の更新に失敗しました。');
-            }
-        }
-        else
-        {
-            if (Input::method() == 'POST')
-            {
-                Session::set_flash('error', $val->error());
+                return Response::redirect('book');
             }
 
-            $this->template->set_global('book', $book, false);
+            Session::set_flash('error', '本の更新に失敗しました。');
         }
 
+        // GET のとき
         $this->template->title = "本の編集";
-        $this->template->content = View::forge('book/edit', ['book' => $book]);
+        $this->template->content = View::forge('book/edit', [
+            'book' => $book
+        ]);
     }
 
-    /**
-     * 削除
-     */
+    // -------------------------------
+    // 本の削除
+    // -------------------------------
     public function action_delete($id = null)
     {
-        if (!Auth::check())
-        {
-            Response::redirect('users/login');
-        }
+        $book = Model_Book::find($id);
 
-        if ($book = Model_Book::find($id))
-        {
-            $book->delete();
-            Session::set_flash('success', '本を削除しました。');
-        }
-        else
-        {
+        if (!$book) {
             Session::set_flash('error', '指定された本が見つかりません。');
+            return Response::redirect('book');
         }
 
-        Response::redirect('book');
+        if ($book->user_id != Auth::get_user_id()[1]) {
+            Session::set_flash('error', 'この本を削除する権限がありません。');
+            return Response::redirect('book');
+        }
+
+        $book->delete();
+        Session::set_flash('success', '本を削除しました。');
+        return Response::redirect('book');
     }
+
+    // -------------------------------
+    // ダッシュボード
+    // -------------------------------
     public function action_dashboard()
     {
-        if (!Auth::check())
-        {
-            Response::redirect('users/login');
-        }
-
         $user_id = Auth::get_user_id()[1];
-        $count = Model_Book::query()->where('user_id', $user_id)->count();
+
+        $count = DB::select(DB::expr('COUNT(*) AS total'))
+            ->from('books')
+            ->where('user_id', $user_id)
+            ->execute()
+            ->get('total');
 
         $this->template->title = "Dashboard";
         $this->template->content = View::forge('book/dashboard', [
             'count' => $count,
         ]);
     }
-
 }

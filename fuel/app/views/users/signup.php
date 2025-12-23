@@ -1,7 +1,7 @@
 <h2>ユーザー登録</h2>
 
 <?php echo Form::open(['action' => 'users/signup', 'method' => 'post']); ?>
-
+<?php echo Form::csrf(); ?>
 <p>
     <?php echo Form::label('ユーザー名', 'username'); ?><br>
     <?php echo Form::input('username', Input::post('username'), [

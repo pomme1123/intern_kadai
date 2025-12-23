@@ -1,7 +1,7 @@
 <h2>新しい本の登録</h2>
 
 <?php echo Form::open(['action' => 'book/create', 'method' => 'post']); ?>
-
+<?php echo Form::csrf(); ?>
 <p>
     <?php echo Form::label('タイトル', 'title'); ?><br>
     <?php echo Form::input('title', Input::post('title'), [

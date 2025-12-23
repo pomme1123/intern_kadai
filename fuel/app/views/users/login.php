@@ -1,7 +1,7 @@
 <h2>ログイン</h2>
 
 <?php echo Form::open('users/login'); ?>
-
+<?php echo Form::csrf(); ?>
 <p>
     <?php echo Form::label('ユーザー名', 'username'); ?><br>
     <?php echo Form::input('username'); ?>
@@ -29,3 +29,8 @@
     <p style="color: green;"><?php echo Session::get_flash('success'); ?></p>
 <?php endif; ?>
 
+<p style="margin-top: 15px;">
+    <a href="/users/signup" class="btn btn-outline-primary">
+        新規登録はこちら
+    </a>
+</p>
