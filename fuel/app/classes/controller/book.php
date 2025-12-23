@@ -8,9 +8,7 @@ use Auth\Auth;
 
 class Controller_Book extends Controller_Template
 {
-    /**
-     * 一覧ページ
-     */
+
     public function before()
     {
         parent::before();
