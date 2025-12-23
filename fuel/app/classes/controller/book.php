@@ -11,6 +11,14 @@ class Controller_Book extends Controller_Template
     /**
      * 一覧ページ
      */
+    public function before()
+    {
+        parent::before();
+
+        if(!Auth::check()){
+            Response::redirect('users/login');
+        }
+    }
     public function action_index()
     {
         if (!Auth::check())
