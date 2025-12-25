@@ -64,10 +64,16 @@ class Controller_Book extends Controller_Template
         // POST のときだけ保存処理
         if (Input::post()) {
 
+            if (!\Security::check_token()) {
+                Session::set_flash('error', '不正なリクエストです（CSRFエラー）');
+                Response::redirect('book');
+            }
+
             // Validation（コントローラ側に移動）
             $val = Validation::forge();
             $val->add('title')->add_rule('required');
             $val->add('impression')->add_rule('required');
+            $val->add('finished_at')->add_rule('required');
 
             if (!$val->run()) {
                 Session::set_flash('error', $val->error());
@@ -118,10 +124,16 @@ class Controller_Book extends Controller_Template
         // POST のときだけ更新処理
         if (Input::post()) {
 
+            if (!\Security::check_token()) {
+                Session::set_flash('error', '不正なリクエストです（CSRFエラー）');
+                Response::redirect('book/edit', $id);
+            }
+
             // Validation
             $val = Validation::forge();
             $val->add('title')->add_rule('required');
             $val->add('impression')->add_rule('required');
+            $val->add('finished_at')->add_rule('required');
 
             if (!$val->run()) {
                 Session::set_flash('error', $val->error());
@@ -169,6 +181,30 @@ class Controller_Book extends Controller_Template
         Session::set_flash('success', '本を削除しました。');
         return Response::redirect('book');
     }
+    public function post_delete_json()
+    {
+        if (!Auth::check()) {
+            return json_encode(['error' => 'not_logged_in']);
+        }
+
+        $id = Input::post('id');
+        $book = Model_Book::find($id);
+
+        if (!$book) {
+            return json_encode(['error' => 'not_found']);
+        }
+
+        // 権限チェック
+        if ($book->user_id != Auth::get_user_id()[1]) {
+            return json_encode(['error' => 'no_permission']);
+        }
+
+        // 削除
+        $book->delete();
+
+        return json_encode(['success' => true]);
+    }
+
 
     // -------------------------------
     // ダッシュボード

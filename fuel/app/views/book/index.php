@@ -19,8 +19,9 @@
                     <td><?php echo e($book->impression); ?></td>
                     <td>
                         <a href="/book/edit/<?php echo $book->id; ?>" class="btn btn-warning btn-sm">編集</a>
-                        <a href="/book/delete/<?php echo $book->id; ?>" class="btn btn-danger btn-sm"
-                           onclick="return confirm('本当に削除しますか？');">削除</a>
+                        <button type="button" class="btn btn-danger delete-book" data-id="<?= $book->id ?>">
+                            削除
+                        </button>
                     </td>
                 </tr>
             <?php endforeach; ?>
@@ -29,3 +30,5 @@
         <?php endif; ?>
     </tbody>
 </table>
+
+<script src="/assets/js/delete.js"></script>

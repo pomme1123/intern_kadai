@@ -16,7 +16,8 @@
     <?php echo Form::textarea('impression', Input::post('impression'), [
         'class' => 'form-control',
         'rows' => 4,
-        'placeholder' => '感想やメモを入力'
+        'placeholder' => '感想やメモを入力',
+        'required' => 'required'
     ]); ?>
 </p>
 
@@ -24,7 +25,8 @@
     <?php echo Form::label('読了日', 'finished_at'); ?><br>
     <?php echo Form::input('finished_at', Input::post('finished_at'), [
         'class' => 'form-control',
-        'type' => 'date'
+        'type' => 'date',
+        'required' => 'required'
     ]); ?>
 </p>
 
